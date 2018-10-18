@@ -20,7 +20,7 @@
 
 
 \section{Introduction}
-The main problem is to find a path from one position or configuration to another, without colliding with the environment. Planning algorithms can be rated regarding different aspects.
+The main problem is to find a dynamically feasible trajectory from one position or configuration to another, without colliding with the environment. Planning algorithms can be rated regarding different aspects.
 
 Performance metrics for path planning algorithms: 
 \begin{itemize}
@@ -227,9 +227,72 @@ After planning, the path can be optimized, too. For example, the number of "zick
 
 \td{noch nich fertig... \\ not yet written...}
 \subsection{Kalman Filter}
+The Kalman filter is a linear-quadratic estimator. The solution is therefore optimal (\emph{optimal estimate}) considering the uncertainty (covariance) of states and measurements as weights.
 
-\subsection{Extended Kalman Filter}
-The (first order) EKF allows to use non-linear system models for Kalman filtering. The EKF adapts techniques from calculus, namely multivariate Taylor Series expansions, to linearize a model about a working point. 
+
+\subsubsection{Time / Prediction Update}
+The \emph{Prediction Update} projects the current state forward in time. Like in basic Linear Time invariant (LTI) systems the update uses the A-Matrix and B-Matrix to determine the effect of the current state and the input at time step \emph{k} on the state at time step \emph{k+1}.
+\begin{equation*}\label{key}
+\vec{x}^-_{k+1} = A \vec{x}_k + B \vec{u}_k
+\end{equation*}
+
+Similarly, the covariance is projected forward. 
+
+\begin{equation*}\label{key}
+{P}^-_{k+1} = A \vec{P}_k A^T + Q
+\end{equation*}
+
+\subsubsection{Measurement / Correction Update}
+The projected state is fused with a measurement, which can only \emph{reduce} the uncertainty, regardless how noisy the measurement is.
+
+The Kalman Gain expresses how much one trusts the measurement.
+
+\begin{equation*}\label{key}
+K_k = P^-_k H^T (HP^-_kH^T + R)^{-1}
+\end{equation*}
+
+The difference between projected and measured input is weighted according to the Kalman gain.
+\\ \emph{Updating the state estimate}
+\begin{equation*}\label{key}
+\vec{x}_k = \vec{x}^-_k + K (\vec{z}_k - H \vec{x}^-_k)
+\end{equation*}
+
+In a simple 1D example, the Kalman gain is a scalar. If the uncertainty of the measurement is zero, the Kalman gain is 1 and one fully trust the measurements. Also, the Covariance matrix goes to zero.
+
+\emph{Updating the error covariance}
+\begin{equation*}\label{key}
+P_k = (I - K_k H) P^-_k
+\end{equation*}
+
+
+The Kalman filter filters noise from the measurement and limits the drifting of the state due to accumulative errors.
+
+\subsubsection{Observability}
+One needs to choose the right state variable(s) to measure in order to keep the estimate from diverging. Which variable is measured is encoded in the measurement matrix H. A system with state vector $x \in \mathcal{R}^n$ is observable if the observability matrix has (row) rank $n$ ($n$ linear independent rows).
+
+\begin{equation*}
+\mathcal{O} = \begin{bmatrix}
+H \\ 
+HA \\ 
+\vdots \\ 
+HA^i \\ 
+\vdots \\ 
+HA^{n-1}
+\end{bmatrix}
+\end{equation*} 
+
+\subsection{Extended Kalman Filter (EKF)}
+The (first order) EKF allows to use non-linear system models for Kalman filtering. The EKF adapts techniques from calculus, namely multivariate Taylor Series expansions, to linearize a model about a working point. \\
+Instead of having a linear relationship between previous state, input and updated state, and state and measurement, which is mandatory for the Kalman filter to apply, the Extended Kalman Filter (EKF) can deal with non-linear functions. \\
+
+\begin{tabular}{cc}
+	\hline 
+	Kalman Filter & Extended Kalman Filter \\ 
+	\hline 
+	$\vec{x}_{k+1} = A \vec{x}_k + B \vec{u}_k + \vec{w}_k$ &$ \vec{x}_{k+1} = f(\vec{x}_k,\vec{u}_k, \vec{w}_k)$ \\ 
+	\hline 
+	$\vec{z}_k = H \vec{x}_k + \vec{v}_k$ &$ \vec{z}_k = h(\vec{x}_k, \vec{v}_k)$ \\ 
+\end{tabular} 
 
 Jacobian...
 
@@ -238,8 +301,11 @@ Instead of using first order approximations of the Taylor series (EKF), the unsc
 
 The idea is to produce several sampling points (Sigma points) around the current state estimate based on its covariance. Then, propagating these points through the nonlinear map to get more accurate estimation of the mean and covariance of the mapping results. In this way, it avoids the need to calculate the Jacobian, hence incurs only the similar computation load as the EKF.
 
+
+
 \subsection{Bayes Filter}
 
+Graphics from AMR 
 
 \subsection{Particle Filter}
 The state representations of the Bayes and Kalman filter are restricted to probability density or Gaussian functions. They cannot model multiple hypotheses in their initial form, for example the uncertainty when a robot could be in one of multiple locations. (Multi-hypothesis KF could do that, but it's only a combination of multiple KFs).
@@ -253,6 +319,7 @@ The particle filter uses random sampling techniques together with probabilistic 
 	\item repeat from \ref{pMM}
 \end{enumerate}
 
+nice pic 
 
 
 \end{multicols*}
